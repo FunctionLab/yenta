@@ -181,7 +181,10 @@ def ignore(task_name, pipeline_name='default'):
         print(f'[bold red]Multiple tasks have the same name: {task_name}. Task names must be unique '
               f'within a pipeline.[/bold red]')
     else:
-        ignore_path = settings.YENTA_STORE_PATH / pipeline_name / task_name / '.ignore'
+        task_path = settings.YENTA_STORE_PATH / pipeline_name / task_name
+        task_path.mkdir(exist_ok=True)
+
+        ignore_path = task_path / '.ignore'
         ignore_path.touch(exist_ok=True)
         print(f'[bold white]Setting task {task_name} to be ignored.[/bold white]')
 
