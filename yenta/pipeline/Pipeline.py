@@ -300,7 +300,6 @@ class Pipeline:
             args = PipelineResult()
             dependencies_succeeded = True
             for dependency in (task.task_def.depends_on or []):
-                print(dependency)
                 args.task_results[dependency] = result.task_results[dependency]
                 if result.task_results[dependency].status == TaskStatus.FAILURE:
                     dependencies_succeeded = False
