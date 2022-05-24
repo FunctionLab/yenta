@@ -182,6 +182,7 @@ def ignore(task_name, pipeline_name='default'):
               f'within a pipeline.[/bold red]')
     else:
         ignore_path = settings.YENTA_STORE_PATH / pipeline_name / task_name / '.ignore'
+        ignore_path.parents[0].mkdir(parents=True, exist_ok=True)
         ignore_path.touch(exist_ok=True)
         print(f'[bold white]Setting task {task_name} to be ignored.[/bold white]')
 
@@ -199,13 +200,14 @@ def dump_task_graph(filename: Path):
 @yenta.command(help='Run the pipeline.')
 @click.option('--up-to', help='Optionally run the pipeline up to and including a given task.')
 @click.option('--force-rerun', '-f', multiple=True, default=[], help='Force specified tasks to rerun.')
+@click.option('--only', '-o', help='Only run the specified task and its dependencies.')
 @click.option('--pipeline-name', default='default', help='The name of the pipeline to run.')
-def run(up_to=None, force_rerun=None, pipeline_name='default'):
+def run(up_to=None, force_rerun=None, only=None, pipeline_name='default'):
 
     logger.info('Running the pipeline')
     tasks = load_tasks(settings.YENTA_ENTRY_POINT)
     pipeline = Pipeline(*tasks, name=pipeline_name)
-    result = pipeline.run_pipeline(up_to, force_rerun)
+    result = pipeline.run_pipeline(up_to, force_rerun, only)
 
 
 if __name__ == "__main__":

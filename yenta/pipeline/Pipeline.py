@@ -21,7 +21,6 @@ from yenta.tasks.Task import TaskDef, ParameterType, ResultSpec
 
 logger = logging.getLogger(__name__)
 
-
 class InvalidTaskResultError(Exception):
     pass
 
@@ -241,7 +240,8 @@ class Pipeline:
         pipeline = PipelineResult()
         if store_path.exists():
             for task_path in store_path.iterdir():
-                if task_path.is_dir():
+                ignore_file = task_path / '.ignore'
+                if task_path.is_dir() and not ignore_file.exists():
                     task_name = task_path.stem
                     with open(task_path / 'inputs.pk', 'rb') as f:
                         inputs = pickle.load(f)
@@ -269,7 +269,7 @@ class Pipeline:
 
         return False
 
-    def run_pipeline(self, up_to: str = None, force_rerun: List[str] = None) -> PipelineResult:
+    def run_pipeline(self, up_to: str = None, force_rerun: List[str] = None, only: str = None) -> PipelineResult:
         """ Execute the tasks in the pipeline.
 
         :param str up_to: If supplied, execute the pipeline only up to this task.
@@ -283,7 +283,15 @@ class Pipeline:
         self._tasks_reused.clear()
         self._tasks_executed.clear()
 
-        for task_name in list(split_after(self.execution_order, lambda x: x == up_to))[0]:
+        if up_to:
+            tasks = list(split_after(self.execution_order, lambda x: x == up_to))[0]
+        elif only and only in self.execution_order:
+            tasks = list(nx.algorithms.dag.ancestors(self.task_graph, only)) + [only]
+            tasks = sorted(tasks, key=self.execution_order.index)
+
+        logger.debug(f'Executing tasks: %s', tasks)
+
+        for task_name in tasks:
             logger.debug(f'Starting executions of {task_name}')
             task_node = self.task_graph.nodes.get(task_name, None)
             if not task_node:
